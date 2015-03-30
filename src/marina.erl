@@ -14,12 +14,7 @@ async_query(Query, Pid) ->
     async_query(Query, Pid, ?CONSISTENCY_ONE).
 
 async_query(Query, Pid, ConsistencyLevel) ->
-    case async_call({query, Query, ConsistencyLevel}, Pid) of
-        {ok, Frame} ->
-            marina_body:decode(Frame);
-        {error, Reason} ->
-            {error, Reason}
-    end.
+    async_call({query, Query, ConsistencyLevel}, Pid).
 
 query(Query) ->
     query(Query, ?CONSISTENCY_ONE).
