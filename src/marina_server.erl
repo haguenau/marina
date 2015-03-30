@@ -54,7 +54,7 @@ handle_msg({call, Ref, From, {query, Query, ConsistencyLevel}}, #state {
 
     case gen_tcp:send(Socket, Msg) of
         ok ->
-            marina_queue:in(Name, Stream, {Ref, From}),
+            marina_queue:in(Name, Stream, {Ref, From, os:timestamp()}),
             {ok, State#state {
                 requests = Requests + 1
             }};
@@ -135,7 +135,10 @@ reply_frames([], State) ->
 reply_frames([#frame {stream = -1} | T], State) ->
     reply_frames(T, State);
 reply_frames([#frame {stream = Stream} = Frame | T], #state {name = Name} = State) ->
-    {Ref, From} = marina_queue:out(Name, Stream),
+    {Ref, From, Timestamp} = marina_queue:out(Name, Stream),
+    Diff = timer:now_diff(os:timestamp(), Timestamp),
+    statsderl:timing(<<"marina.reply">>, Diff, 0.001),
+    statsderl:increment(<<"marina.reply">>, 1, 0.001),
     reply(Name, Ref, From, {ok, Frame}),
     reply_frames(T, State).
 

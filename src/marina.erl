@@ -29,6 +29,7 @@ query(Query, ConsistencyLevel, Timeout) ->
 %% private
 -spec call(term(), pos_integer()) -> ok | {ok, term()} | {error, atom()}.
 call(Msg, Timeout) ->
+    statsderl:increment(<<"marina.call">>, 1, 0.001),
     case async_call(Msg, self()) of
         {ok, Ref} ->
             receive
@@ -43,6 +44,7 @@ call(Msg, Timeout) ->
 
 -spec async_call(term(), pid()) -> {ok, erlang:ref()} | {error, backlog_full}.
 async_call(Msg, Pid) ->
+    statsderl:increment(<<"marina.async_call">>, 1, 0.001),
     Ref = make_ref(),
     Server = random_server(),
     case marina_backlog:check(Server) of
@@ -50,6 +52,7 @@ async_call(Msg, Pid) ->
             Server ! {call, Ref, Pid, Msg},
             {ok, Ref};
         _ ->
+            statsderl:increment(<<"marina.backlog_full">>, 1, 0.001),
             {error, backlog_full}
     end.
 
